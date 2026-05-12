@@ -43,3 +43,7 @@ jobs:
 
       - name: Security scan - dependencies (safety)
         run: safety check -r requirements.txt
+
+      # ── Build Docker image ──────────────────────────────────────────────────
+      - name: Build Docker image
+        run: docker build -t django-cicd-lab:${{ github.sha }} .
