@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Todo App — CI/CD Lab</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 16px; }
+    h1 { color: #2d3748; }
+    form.add-form { display: flex; gap: 8px; margin-bottom: 24px; }
+    form.add-form input { flex: 1; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; }
+    button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-add  { background: #3182ce; color: #fff; }
+    .btn-done { background: #48bb78; color: #fff; font-size: 0.8rem; padding: 4px 10px; }
+    .btn-undo { background: #ed8936; color: #fff; font-size: 0.8rem; padding: 4px 10px; }
+    .btn-del  { background: #fc8181; color: #fff; font-size: 0.8rem; padding: 4px 10px; }
+    ul { list-style: none; padding: 0; }
+    li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
+    li span { flex: 1; }
+    li span.done { text-decoration: line-through; color: #a0aec0; }
+    .empty { color: #a0aec0; }
+  </style>
+</head>
+<body>
+  <h1>Todo App</h1>
+  <form class="add-form" action="/create/" method="post">
+    {% csrf_token %}
+    <input name="title" placeholder="Add a new task…" required>
+    <button class="btn-add" type="submit">Add</button>
+  </form>
+
+  {% if todos %}
+  <ul>
+    {% for todo in todos %}
+    <li>
+      <span class="{% if todo.completed %}done{% endif %}">{{ todo.title }}</span>
+      <form action="/toggle/{{ todo.pk }}/" method="post" style="display:inline">
+        {% csrf_token %}
+        <button class="{% if todo.completed %}btn-undo{% else %}btn-done{% endif %}" type="submit">
+          {% if todo.completed %}Undo{% else %}Done{% endif %}
+        </button>
+      </form>
+      <form action="/delete/{{ todo.pk }}/" method="post" style="display:inline">
+        {% csrf_token %}
+        <button class="btn-del" type="submit">Delete</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">No tasks yet. Add one above!</p>
+  {% endif %}
+</body>
+</html>
