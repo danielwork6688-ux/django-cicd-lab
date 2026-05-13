@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-cicd-lab
+  labels:
+    app: django-cicd-lab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: django-cicd-lab
+  template:
+    metadata:
+      labels:
+        app: django-cicd-lab
+    spec:
+      containers:
+        - name: django-cicd-lab
+          image: djangocicdlab.azurecr.io/django-cicd-lab:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: SECRET_KEY
+              value: "change-me-in-production"
+            - name: DJANGO_SETTINGS_MODULE
+              value: "config.settings"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"

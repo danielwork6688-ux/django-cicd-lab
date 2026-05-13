@@ -60,3 +60,22 @@ jobs:
           tags: |
             ${{ secrets.ACR_LOGIN_SERVER }}/django-cicd-lab:${{ github.sha }}
             ${{ secrets.ACR_LOGIN_SERVER }}/django-cicd-lab:latest
+
+      # ── Deploy to AKS ───────────────────────────────────────────────────────
+      - name: Set AKS context
+        if: github.ref == 'refs/heads/main'
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: daniel-cicd
+          cluster-name: django-cicd-aks
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to AKS
+        if: github.ref == 'refs/heads/main'
+        run: |
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
+          kubectl rollout status deployment/django-cicd-lab

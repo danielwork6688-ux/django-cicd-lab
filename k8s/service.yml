@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-cicd-lab
+spec:
+  type: LoadBalancer
+  selector:
+    app: django-cicd-lab
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
