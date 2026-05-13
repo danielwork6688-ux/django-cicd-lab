@@ -79,6 +79,6 @@ jobs:
       - name: Deploy to AKS
         if: github.ref == 'refs/heads/main'
         run: |
-          kubectl apply -f k8s/deployment.yml
           kubectl apply -f k8s/service.yml
+          kubectl set image deployment/django-cicd-lab django-cicd-lab=${{ secrets.ACR_LOGIN_SERVER }}/django-cicd-lab:${{ github.sha }}
           kubectl rollout status deployment/django-cicd-lab
