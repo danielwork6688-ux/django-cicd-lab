@@ -1,5 +1,23 @@
 name: CI
 
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║              SERVICE CONFIGURATION — edit these to reuse            ║
+# ╠══════════════════════════════════════════════════════════════════════╣
+# ║  Required GitHub Secrets (Settings → Secrets → Actions):           ║
+# ║    ACR_LOGIN_SERVER      e.g. myregistry.azurecr.io                ║
+# ║    AZURE_CLIENT_ID       Service principal client ID               ║
+# ║    AZURE_CLIENT_SECRET   Service principal client secret           ║
+# ║    AZURE_CREDENTIALS     Full JSON for azure/login                 ║
+# ║    AZURE_SUBSCRIPTION_ID Azure subscription ID                     ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+env:
+  APP_NAME: django-cicd-lab
+  PYTHON_VERSION: "3.12"
+  FLAKE8_MAX_LINE_LENGTH: "120"
+  AKS_RESOURCE_GROUP: daniel-cicd
+  AKS_CLUSTER_NAME: django-cicd-aks
+  K8S_NAMESPACE: default
+
 on:
   push:
     branches: ["**"]
@@ -18,7 +36,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: |
@@ -28,7 +46,7 @@ jobs:
 
       # ── Lint ────────────────────────────────────────────────────────────────
       - name: Lint (flake8)
-        run: flake8 . --max-line-length=120 --exclude=migrations
+        run: flake8 . --max-line-length=${{ env.FLAKE8_MAX_LINE_LENGTH }} --exclude=migrations
 
       # ── Test ────────────────────────────────────────────────────────────────
       - name: Test (Django)
@@ -58,8 +76,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.ACR_LOGIN_SERVER }}/django-cicd-lab:${{ github.sha }}
-            ${{ secrets.ACR_LOGIN_SERVER }}/django-cicd-lab:latest
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.APP_NAME }}:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.APP_NAME }}:latest
 
       # ── Deploy to AKS ───────────────────────────────────────────────────────
       - name: Log in to Azure
@@ -72,13 +90,18 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: azure/aks-set-context@v3
         with:
-          resource-group: daniel-cicd
-          cluster-name: django-cicd-aks
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
           subscription: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to AKS
         if: github.ref == 'refs/heads/main'
+        env:
+          APP_NAME: ${{ env.APP_NAME }}
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          kubectl apply -f k8s/service.yml
-          kubectl set image deployment/django-cicd-lab django-cicd-lab=${{ secrets.ACR_LOGIN_SERVER }}/django-cicd-lab:${{ github.sha }}
-          kubectl rollout status deployment/django-cicd-lab
+          set -euo pipefail
+          envsubst < k8s/deployment.yml | kubectl apply -f - -n ${{ env.K8S_NAMESPACE }}
+          envsubst < k8s/service.yml    | kubectl apply -f - -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/${{ env.APP_NAME }} -n ${{ env.K8S_NAMESPACE }}

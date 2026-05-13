@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: django-cicd-lab
+  name: ${APP_NAME}
   labels:
-    app: django-cicd-lab
+    app: ${APP_NAME}
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: django-cicd-lab
+      app: ${APP_NAME}
   template:
     metadata:
       labels:
-        app: django-cicd-lab
+        app: ${APP_NAME}
     spec:
       containers:
-        - name: django-cicd-lab
-          image: djangocicdlab.azurecr.io/django-cicd-lab:latest
+        - name: ${APP_NAME}
+          image: ${ACR_LOGIN_SERVER}/${APP_NAME}:${IMAGE_TAG}
           ports:
             - containerPort: 8000
           env:
